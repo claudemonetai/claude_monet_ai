@@ -1,7 +1,10 @@
 import tweepy
 import os
-from ai16z import AutonomousAI
+import json
+from ai16z import AutonomousAI  # Adjust based on the actual module in the repo
+from itertools import cycle
 from PIL import Image
+import random
 
 # Twitter API credentials
 CONSUMER_KEY = 'your_consumer_key'
@@ -30,7 +33,34 @@ concept = {
 # Initialize the ai16z Autonomous AI agent
 agent = AutonomousAI(name=concept["name"], description=concept["description"])
 
-def generate_image_with_ai16z(prompt):
+# Function to load painting templates from an external JSON file
+def load_painting_templates(file_path="painting_templates.json"):
+    """
+    Load painting templates from a JSON file.
+    The JSON file should be structured as a list of dictionaries with "name" and "description".
+    """
+    try:
+        with open(file_path, "r") as file:
+            templates = json.load(file)
+        return cycle(templates)  # Return a cycle for infinite iteration
+    except Exception as e:
+        print(f"Error loading painting templates: {e}")
+        return cycle([])
+
+# Function to generate a painting dynamically
+def generate_painting(painting_templates):
+    """
+    Dynamically generate a painting name and description using templates.
+    Adds random modifiers to ensure variety.
+    """
+    template = next(painting_templates)
+    random_modifier = random.choice(["at Twilight", "in Spring", "under Blockchain Skies", "with Token Ripples"])
+    return {
+        "name": f"{template['name']} {random_modifier}",
+        "description": f"{template['description']} This unique view is enhanced with the hues of {random_modifier.lower()}."
+    }
+
+def generate_image_with_ai16z(prompt, name):
     """
     Use the ai16z AutonomousAI agent to generate Claude Monet-style images.
     """
@@ -39,34 +69,37 @@ def generate_image_with_ai16z(prompt):
         result = agent.generate_image(prompt=prompt, style="Claude Monet")
         image_path = result.get("image_path")  # Hypothetical response structure
         if image_path:
-            return Image.open(image_path)
+            return image_path, name
         else:
             raise Exception("Image generation failed. No image path returned.")
     except Exception as e:
         raise Exception(f"Error generating image: {e}")
 
-def post_image_to_twitter(image, caption):
+def post_image_to_twitter(image_path, name, description):
     """
-    Post an image to Twitter with a given caption.
+    Post an image to Twitter with the given name and description in the required format.
     """
-    image_path = "generated_image.png"
-    image.save(image_path)
+    caption = f"{name}\n\n{description}\n\nby @claudemonetAI"
     api.update_status_with_media(status=caption, filename=image_path)
-    print("Posted to Twitter successfully.")
+    print(f"Posted '{name}' to Twitter successfully.")
     os.remove(image_path)
 
 if __name__ == "__main__":
     try:
-        # Generate prompt and caption
-        prompt = f"{concept['description']} Featuring themes like liquidity pools, tokenized blooms, and blockchain grids."
-        caption = f"{concept['name']} - {concept['description']} #ClaudeAI #CryptoArt"
-        
-        # Generate the image
-        print("Generating Monet-style AI image...")
-        image = generate_image_with_ai16z(prompt)
-        
-        # Post to Twitter
-        print("Posting to Twitter...")
-        post_image_to_twitter(image, caption)
+        # Load painting templates from JSON file
+        painting_templates = load_painting_templates()
+
+        while True:
+            # Generate a new painting
+            painting = generate_painting(painting_templates)
+            prompt = f"{concept['description']} {painting['description']}"
+            print(f"Generating image for '{painting['name']}'...")
+            
+            # Generate the image
+            image_path, name = generate_image_with_ai16z(prompt, painting['name'])
+            
+            # Post to Twitter
+            post_image_to_twitter(image_path, name, painting["description"])
+
     except Exception as e:
         print(f"Error: {e}")
