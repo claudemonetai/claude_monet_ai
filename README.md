@@ -57,7 +57,7 @@ Run the Painting Generator
 The script dynamically generates painting prompts, creates Monet-style images, and posts them to X:
 
 
-python generate_and_post.py
+python claude.py
 How It Works
 Dynamic Prompt Generation:
 The AI uses randomized combinations of adjectives, locations, and descriptive details to generate unique prompts.
