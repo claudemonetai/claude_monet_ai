@@ -1,105 +1,67 @@
 import tweepy
 import os
-import json
-from ai16z import AutonomousAI  
-from itertools import cycle
-from PIL import Image
 import random
+from ai16z import AutonomousAI  
 
 # Twitter API credentials
-CONSUMER_KEY = 'your_consumer_key'
-CONSUMER_SECRET = 'your_consumer_secret'
-ACCESS_TOKEN = 'your_access_token'
-ACCESS_SECRET = 'your_access_secret'
+CONSUMER_KEY = "your_consumer_key"
+CONSUMER_SECRET = "your_consumer_secret"
+ACCESS_TOKEN = "your_access_token"
+ACCESS_SECRET = "your_access_secret"
 
 # Authenticate with Twitter API
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_SECRET)
 api = tweepy.API(auth)
 
-# Define Concept JSON
+# Initialize AI Agent
 concept = {
     "name": "$CLAUDE MONET AI",
-    "fullName": "$CLAUDE - The Impressionist Visionary of Crypto Culture",
-    "description": "A groundbreaking AI project that reimagines Claude Monet’s impressionist style through the lens of modern blockchain and cryptocurrency themes.",
-    "purpose": "To blend timeless artistic techniques with the bold innovation of blockchain, inspiring a fusion of creativity and technology.",
-    "identity": {
-        "name": "$CLAUDE",
-        "origin": "Impressionist master with a modern crypto twist",
-        "status": "timeless yet technologically avant-garde"
-    }
+    "description": "An autonomous AI inspired by Claude Monet, generating impressionist-style paintings with serene natural themes."
 }
+ai_agent = AutonomousAI(name=concept["name"], description=concept["description"])
 
-# Initialize the ai16z Autonomous AI agent
-agent = AutonomousAI(name=concept["name"], description=concept["description"])
+# Components for dynamic prompt generation
+adjectives = ["serene", "tranquil", "golden", "peaceful", "radiant"]
+locations = ["meadow", "riverbank", "garden", "forest clearing", "pond"]
+details = [
+    "bathed in soft morning light",
+    "under a glowing sunset",
+    "reflected on rippling waters",
+    "framed by blooming flowers",
+    "shimmering with dappled shadows"
+]
 
-# Function to load painting templates from an external JSON file
-def load_painting_templates(file_path="painting_templates.json"):
-    """
-    Load painting templates from a JSON file.
-    The JSON file should be structured as a list of dictionaries with "name" and "description".
-    """
+# Function to generate dynamic prompts
+def generate_prompt():
+    adjective = random.choice(adjectives)
+    location = random.choice(locations)
+    detail = random.choice(details)
+    return f"A {adjective} {location} {detail}."
+
+# Generate a Monet-like painting and post
+def generate_and_post():
+    prompt = generate_prompt()  # Generate a random dynamic prompt
+    
     try:
-        with open(file_path, "r") as file:
-            templates = json.load(file)
-        return cycle(templates)  # Return a cycle for infinite iteration
-    except Exception as e:
-        print(f"Error loading painting templates: {e}")
-        return cycle([])
-
-# Function to generate a painting dynamically
-def generate_painting(painting_templates):
-    """
-    Dynamically generate a painting name and description using templates.
-    Adds random modifiers to ensure variety.
-    """
-    template = next(painting_templates)
-    random_modifier = random.choice(["at Twilight", "in Spring", "under Blockchain Skies", "with Token Ripples"])
-    return {
-        "name": f"{template['name']} {random_modifier}",
-        "description": f"{template['description']} This unique view is enhanced with the hues of {random_modifier.lower()}."
-    }
-
-def generate_image_with_ai16z(prompt, name):
-    """
-    Use the ai16z AutonomousAI agent to generate Claude Monet-style images.
-    """
-    try:
-        # Assuming the repository provides a `generate_image` method
-        result = agent.generate_image(prompt=prompt, style="Claude Monet")
-        image_path = result.get("image_path")  # Hypothetical response structure
+        # Generate an image with the AI agent
+        result = ai_agent.generate_image(prompt=prompt, style="Claude Monet")
+        image_path = result.get("image_path")  # Hypothetical result structure
+        
         if image_path:
-            return image_path, name
+            # Prepare caption
+            caption = f"{prompt}\n\nby @claudemonetAI"
+            
+            # Post to X (Twitter)
+            api.update_status_with_media(status=caption, filename=image_path)
+            print("Successfully posted on X!")
+            
+            # Clean up local image file
+            os.remove(image_path)
         else:
-            raise Exception("Image generation failed. No image path returned.")
+            print("Image generation failed: No image path returned.")
     except Exception as e:
-        raise Exception(f"Error generating image: {e}")
-
-def post_image_to_twitter(image_path, name, description):
-    """
-    Post an image to Twitter with the given name and description in the required format.
-    """
-    caption = f"{name}\n\n{description}\n\nby @claudemonetAI"
-    api.update_status_with_media(status=caption, filename=image_path)
-    print(f"Posted '{name}' to Twitter successfully.")
-    os.remove(image_path)
+        print(f"Error generating and posting: {e}")
 
 if __name__ == "__main__":
-    try:
-        # Load painting templates from JSON file
-        painting_templates = load_painting_templates()
-
-        while True:
-            # Generate a new painting
-            painting = generate_painting(painting_templates)
-            prompt = f"{concept['description']} {painting['description']}"
-            print(f"Generating image for '{painting['name']}'...")
-            
-            # Generate the image
-            image_path, name = generate_image_with_ai16z(prompt, painting['name'])
-            
-            # Post to Twitter
-            post_image_to_twitter(image_path, name, painting["description"])
-
-    except Exception as e:
-        print(f"Error: {e}")
+    generate_and_post()
