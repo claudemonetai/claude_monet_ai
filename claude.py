@@ -1,7 +1,7 @@
 import tweepy
 import os
 import json
-from ai16z import AutonomousAI  # Adjust based on the actual module in the repo
+from ai16z import AutonomousAI  
 from itertools import cycle
 from PIL import Image
 import random
