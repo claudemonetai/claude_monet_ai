@@ -46,7 +46,7 @@ def generate_and_post():
     try:
         # Generate an image with the AI agent
         result = ai_agent.generate_image(prompt=prompt, style="Claude Monet")
-        image_path = result.get("image_path")  # Hypothetical result structure
+        image_path = result.get("image_path") 
         
         if image_path:
             # Prepare caption
